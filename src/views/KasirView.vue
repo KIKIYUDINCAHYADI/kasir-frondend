@@ -59,28 +59,61 @@
 </template>
 
 <script setup>
-import ProductList from '@/components/ProductList.vue'
-import Cart from '@/components/Cart.vue'
 import { ref, computed, onMounted } from 'vue'
 
-const cart = ref([])
-const products = ref([])
+const BASE_URL = 'https://backend-kasir.cahyadik773.workers.dev'
+// URL dasar untuk semua permintaan API ke backend (Cloudflare Workers)
 
+const cart = ref([])      // Menyimpan daftar produk yang ditambahkan ke keranjang
+const products = ref([])  // Menyimpan daftar semua produk yang diambil dari backend
+
+// Lifecycle hook yang akan dipanggil ketika komponen pertama kali dirender
 onMounted(async () => {
-  const res = await fetch('http://localhost:8787/api/products')
+  const res = await fetch(`${BASE_URL}/api/products`)
+  // Panggil API untuk mengambil semua produk
   products.value = await res.json()
+  // Simpan hasil respon ke dalam variabel `products`
 })
 
 function addToCart(product) {
+  // Fungsi untuk menambahkan produk ke keranjang
   cart.value.push(product)
 }
 
-function checkout() {
-  alert('Transaksi berhasil!')
-  cart.value = []
+async function checkout() {
+  // Fungsi untuk melakukan proses checkout (transaksi)
+  try {
+    const totalValue = total.value
+    // Hitung total harga semua produk di keranjang
+
+    const res = await fetch(`${BASE_URL}/api/transactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: cart.value,   // Kirim seluruh isi keranjang
+        total: totalValue    // Kirim nilai total harga
+      })
+    })
+
+    if (res.ok) {
+      // Jika respon berhasil (status 200-299)
+      alert('Transaksi berhasil!')
+      cart.value = [] // Kosongkan keranjang setelah checkout
+    } else {
+      alert('Gagal melakukan checkout.')
+      // Jika respon error dari server (status di luar 2xx)
+    }
+  } catch (e) {
+    // Menangani error jaringan atau kegagalan lainnya
+    alert('Terjadi kesalahan saat checkout.')
+    console.error(e)
+  }
 }
 
-const total = computed(() => cart.value.reduce((sum, item) => sum + item.price, 0))
+const total = computed(() =>
+  // Nilai total harga semua item dalam keranjang
+  cart.value.reduce((sum, item) => sum + item.price, 0)
+)
 </script>
 
 <style scoped>

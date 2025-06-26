@@ -42,46 +42,64 @@
     </table>
   </div>
 </template>
-
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted } from 'vue' 
+// Mengimpor `ref` untuk membuat data reaktif dan `onMounted` untuk mengeksekusi fungsi saat komponen pertama kali dimuat
 
-const products = ref([])
-const form = ref({ id: null, name: '', price: '' })
+const BASE_URL = 'https://backend-kasir.cahyadik773.workers.dev'
+// URL dasar untuk semua endpoint API yang terhubung ke backend Cloudflare Workers
+
+const products = ref([]) 
+// State reaktif untuk menyimpan daftar produk dari API
+
+const form = ref({ id: null, name: '', price: '' }) 
+// State reaktif untuk menyimpan data form (digunakan untuk tambah/edit produk)
 
 const fetchProducts = async () => {
-  const res = await fetch('http://localhost:8787/api/products')
-  products.value = await res.json()
+  // Fungsi async untuk mengambil semua data produk dari server
+  const res = await fetch(`${BASE_URL}/api/products`) // Panggil API GET
+  products.value = await res.json() // Simpan hasil ke state `products`
 }
 
-onMounted(fetchProducts)
+onMounted(fetchProducts) 
+// Saat komponen dimuat, jalankan `fetchProducts()` agar data produk langsung muncul
 
 const saveProduct = async () => {
+  // Fungsi untuk menyimpan (tambah atau edit) produk
   const method = form.value.id ? 'PUT' : 'POST'
+  // Jika form punya ID → update (PUT), jika tidak → tambah baru (POST)
+
   const url = form.value.id
-    ? `http://localhost:8787/api/products/${form.value.id}`
-    : `http://localhost:8787/api/products`
+    ? `${BASE_URL}/api/products/${form.value.id}`
+    : `${BASE_URL}/api/products`
+  // Tentukan URL: jika edit, tambahkan ID produk ke URL
 
   await fetch(url, {
     method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(form.value)
+    headers: { 'Content-Type': 'application/json' }, // Format data JSON
+    body: JSON.stringify(form.value) // Kirim data form sebagai JSON
   })
 
-  resetForm()
-  fetchProducts()
+  resetForm() // Kosongkan form setelah simpan
+  fetchProducts() // Ambil ulang data produk agar UI ter-update
 }
 
 const editProduct = (product) => {
-  form.value = { ...product }
+  // Fungsi untuk mengisi form dengan data produk yang dipilih
+  form.value = { ...product } 
+  // Salin semua properti produk ke dalam form (edit mode)
 }
 
 const deleteProduct = async (id) => {
-  await fetch(`http://localhost:8787/api/products/${id}`, { method: 'DELETE' })
-  fetchProducts()
+  // Fungsi untuk menghapus produk berdasarkan ID
+  await fetch(`${BASE_URL}/api/products/${id}`, { method: 'DELETE' })
+  // Panggil API DELETE untuk hapus produk
+  fetchProducts() // Ambil ulang data agar UI ter-update
 }
 
 const resetForm = () => {
+  // Fungsi untuk mereset form kembali ke keadaan kosong
   form.value = { id: null, name: '', price: '' }
 }
 </script>
+
